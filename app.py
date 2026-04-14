@@ -3,40 +3,57 @@ import torch
 import torch.nn as nn
 from torchvision import models, transforms
 from PIL import Image
-import urllib.request
+import gdown
 import os
 
-# Model setup
+# -----------------------------
+# 1. MODEL SETUP
+# -----------------------------
 model = models.alexnet(pretrained=False)
-model.classifier[6] = nn.Linear(4096, 15)  # change if needed
+model.classifier[6] = nn.Linear(4096, 15)  # ⚠️ change if your classes differ
 
-# Download model from Drive
+# -----------------------------
+# 2. DOWNLOAD MODEL FROM DRIVE
+# -----------------------------
 model_url = "https://drive.google.com/uc?id=1w0R7B9WP9ve_MkournN1pNZPWW2Qr8M4"
 model_path = "plant_disease_model.pth"
 
-if not os.path.exists(model_path):
-    urllib.request.urlretrieve(model_url, model_path)
+# Remove corrupted file if exists
+if os.path.exists(model_path):
+    os.remove(model_path)
 
+# Download model
+if not os.path.exists(model_path):
+    gdown.download(model_url, model_path, quiet=False)
+
+# Load model
 model.load_state_dict(torch.load(model_path, map_location="cpu"))
 model.eval()
 
-# Dummy class names (replace later)
+# -----------------------------
+# 3. CLASS NAMES
+# -----------------------------
+# ⚠️ Replace with your actual class names later
 classes = [f"class_{i}" for i in range(15)]
 
-# Transform
+# -----------------------------
+# 4. IMAGE TRANSFORM
+# -----------------------------
 transform = transforms.Compose([
-    transforms.Resize((224,224)),
+    transforms.Resize((224, 224)),
     transforms.ToTensor()
 ])
 
-# UI
-st.title("🌿 Plant Disease Detection")
+# -----------------------------
+# 5. UI
+# -----------------------------
+st.title("🌿 Plant Disease Detection App")
 
-uploaded_file = st.file_uploader("Upload Leaf Image", type=["jpg","png"])
+uploaded_file = st.file_uploader("Upload Leaf Image", type=["jpg", "png", "jpeg"])
 
 if uploaded_file:
     image = Image.open(uploaded_file).convert("RGB")
-    st.image(image, caption="Uploaded Image")
+    st.image(image, caption="Uploaded Image", use_column_width=True)
 
     img = transform(image).unsqueeze(0)
 
